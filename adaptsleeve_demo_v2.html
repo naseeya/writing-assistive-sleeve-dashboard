@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdaptSleeve — Live Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06040f;--bg2:#0c0820;--panel:#110e24;--panel2:#1a1535;--border:rgba(123,47,255,0.22);
+--purple:#7b2fff;--violet:#9b4dff;--lav:#b87eff;--glow:#c060ff;--pink:#e040ff;
+--green:#00e5a0;--red:#ff4d6d;--amber:#ffb830;--blue:#4db8ff;
+--text:#e8deff;--text2:#a98bd4;--text3:#5c4480;
+--mono:'JetBrains Mono',monospace;--display:'Syne',sans-serif;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--display);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(0,0,0,0.02) 3px,rgba(0,0,0,0.02) 4px);}
+nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;
+padding:0.75rem 1.4rem;background:rgba(6,4,15,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.nav-brand{font-family:var(--mono);font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;
+color:var(--glow);display:flex;align-items:center;gap:0.6rem;}
+.nav-brand::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--glow);
+box-shadow:0 0 12px var(--glow);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.badges{display:flex;gap:0.7rem;}
+.badge{display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.7rem;
+border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:0.58rem;letter-spacing:0.08em;}
+.bdot{width:6px;height:6px;border-radius:50%;transition:all 0.3s;}
+.bdot.live{background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1.5s infinite;}
+.bdot.sim{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+.bdot.off{background:var(--text3);}
+.bdot.ml{background:var(--violet);box-shadow:0 0 6px var(--violet);animation:none;}
+.app{display:grid;grid-template-columns:1fr 310px;gap:0.9rem;padding:0.9rem 1.1rem;}
+.mode-bar{grid-column:1/-1;display:flex;align-items:center;gap:0.5rem;
+background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:0.65rem 1rem;}
+.mlbl{font-family:var(--mono);font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);margin-right:0.3rem;}
+.mbtn{padding:0.35rem 0.85rem;border:1px solid var(--border);border-radius:5px;
+background:transparent;color:var(--text2);font-family:var(--mono);font-size:0.6rem;
+letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+.mbtn.on{background:var(--purple);border-color:var(--purple);color:#fff;box-shadow:0 0 12px rgba(123,47,255,0.4);}
+.mbtn:hover:not(.on){border-color:var(--violet);color:var(--lav);}
+.msep{width:1px;height:22px;background:var(--border);margin:0 0.4rem;}
+.ard-ctrl{display:flex;align-items:center;gap:0.6rem;margin-left:auto;}
+.ard-ctrl.hidden{display:none;}
+.tinput{background:var(--panel2);border:1px solid var(--border);border-radius:5px;
+padding:0.28rem 0.55rem;color:var(--text);font-family:var(--mono);font-size:0.58rem;width:80px;outline:none;}
+.tinput:focus{border-color:var(--violet);}
+.cbtn{padding:0.3rem 0.7rem;background:transparent;border:1px solid var(--green);
+border-radius:5px;color:var(--green);font-family:var(--mono);font-size:0.57rem;
+letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
+.cbtn:hover{background:rgba(0,229,160,0.1);}
+.sim-ctrl{display:flex;gap:0.5rem;margin-left:auto;}
+.sim-ctrl.hidden{display:none;}
+.psel{background:var(--panel2);border:1px solid var(--border);border-radius:5px;
+padding:0.3rem 0.6rem;color:var(--text);font-family:var(--mono);font-size:0.6rem;
+appearance:none;cursor:pointer;outline:none;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+padding:1.1rem 1.3rem;position:relative;overflow:hidden;}
+.panel::before{content:'';position:absolute;inset:0;
+background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(123,47,255,0.04) 0%,transparent 70%);pointer-events:none;}
+.ptag{font-family:var(--mono);font-size:0.55rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--purple);margin-bottom:0.35rem;}
+.ptitle{font-size:0.86rem;font-weight:700;color:var(--text);margin-bottom:0.9rem;}
+.left-col{display:flex;flex-direction:column;gap:0.9rem;}
+/* PIPELINE */
+.pipeline{display:flex;align-items:center;}
+.pbox{flex:1;text-align:center;padding:0.4rem 0.25rem;background:var(--panel2);
+border:1px solid rgba(123,47,255,0.1);border-radius:5px;font-family:var(--mono);
+font-size:0.5rem;color:var(--text3);letter-spacing:0.05em;transition:all 0.25s;line-height:1.5;}
+.pbox.on{border-color:var(--purple);color:var(--lav);background:rgba(123,47,255,0.1);box-shadow:0 0 7px rgba(123,47,255,0.18);}
+.parr{font-size:0.55rem;color:var(--text3);padding:0 0.18rem;flex-shrink:0;}
+/* HERO */
+.hero-grid{display:grid;grid-template-columns:1fr auto auto auto;gap:1.2rem;align-items:center;}
+.pred-lbl{font-family:var(--mono);font-size:0.54rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);margin-bottom:0.35rem;}
+.pred-res{font-size:2rem;font-weight:800;letter-spacing:-0.03em;transition:all 0.4s;}
+.pred-res.w{background:linear-gradient(135deg,var(--green),#00cfb4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 15px rgba(0,229,160,0.35));}
+.pred-res.nw{color:var(--text2);-webkit-text-fill-color:var(--text2);}
+.pred-conf{font-family:var(--mono);font-size:0.7rem;color:var(--text2);margin-top:0.25rem;}
+.pred-conf b{color:var(--lav);}
+.imb-hdr{display:flex;justify-content:space-between;margin-bottom:0.28rem;}
+.imb-lbl{font-family:var(--mono);font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);}
+.imb-v{font-family:var(--mono);font-size:0.78rem;font-weight:600;color:var(--text);}
+.imb-t{height:6px;background:rgba(123,47,255,0.1);border-radius:3px;overflow:hidden;margin-bottom:0.25rem;}
+.imb-f{height:100%;border-radius:3px;transition:width 0.35s,background 0.4s;background:linear-gradient(90deg,var(--purple),var(--violet));}
+.imb-f.hi{background:linear-gradient(90deg,var(--amber),var(--red));}
+.imb-note{font-family:var(--mono);font-size:0.54rem;color:var(--text3);}
+.imb-note b{color:var(--amber);}
+/* SERVO RINGS */
+.srv{display:flex;flex-direction:column;align-items:center;gap:0.28rem;}
+.rw{position:relative;width:68px;height:68px;}
+.rw svg{transform:rotate(-90deg);}
+.rbg{stroke:rgba(123,47,255,0.12);}
+.rf{stroke-dasharray:196;stroke-dashoffset:196;stroke-linecap:round;transition:stroke-dashoffset 0.5s,stroke 0.4s;}
+.rctr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+font-family:var(--mono);font-size:0.78rem;font-weight:600;color:var(--text);}
+.slbl{font-family:var(--mono);font-size:0.52rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);}
+/* VIBRATION */
+.vib{display:flex;flex-direction:column;align-items:center;gap:0.3rem;}
+.vib-circle{width:56px;height:56px;border-radius:50%;border:2px solid var(--amber);
+display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+background:rgba(255,184,48,0.05);transition:all 0.3s;}
+.vib-circle.on{box-shadow:0 0 0 0 rgba(255,184,48,0.4);animation:vp 0.35s infinite;}
+@keyframes vp{0%{box-shadow:0 0 0 0 rgba(255,184,48,0.5);}100%{box-shadow:0 0 0 10px rgba(255,184,48,0);}}
+.vfreq{font-family:var(--mono);font-size:0.58rem;color:var(--amber);}
+/* SENSORS */
+.sgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.6rem;}
+.sc{background:var(--panel2);border:1px solid rgba(123,47,255,0.1);border-radius:8px;
+padding:0.75rem 0.65rem;transition:border-color 0.3s;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+background:linear-gradient(90deg,var(--purple),var(--pink));transform:scaleX(0);transform-origin:left;transition:transform 0.4s;}
+.sc.on{border-color:rgba(123,47,255,0.3);}
+.sc.on::after{transform:scaleX(1);}
+.sn{font-family:var(--mono);font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-bottom:0.4rem;}
+.sv{font-family:var(--mono);font-size:1.15rem;font-weight:600;color:var(--text);line-height:1;margin-bottom:0.35rem;transition:color 0.3s;}
+.sv.hi{color:var(--lav);}
+.su{font-family:var(--mono);font-size:0.52rem;color:var(--text3);}
+.sbt{height:2px;background:rgba(123,47,255,0.1);border-radius:1px;margin-top:0.5rem;}
+.sb{height:2px;border-radius:1px;background:linear-gradient(90deg,var(--purple),var(--violet));transition:width 0.3s;max-width:100%;}
+/* CHART */
+.chart-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.7rem;}
+.leg{display:flex;gap:0.7rem;}
+.li{display:flex;align-items:center;gap:0.3rem;font-family:var(--mono);font-size:0.54rem;color:var(--text2);}
+.ld{width:6px;height:6px;border-radius:50%;}
+canvas#chart{width:100%;height:165px;display:block;}
+/* SERIAL */
+.slog{background:var(--bg);border:1px solid rgba(123,47,255,0.1);border-radius:6px;
+padding:0.6rem;height:82px;overflow-y:auto;font-family:var(--mono);font-size:0.56rem;color:var(--text3);line-height:1.7;}
+.slog::-webkit-scrollbar{width:2px;}
+.slog::-webkit-scrollbar-thumb{background:var(--purple);border-radius:1px;}
+.sr{color:var(--green);}
+.sr.tx{color:var(--amber);}
+.sr.er{color:var(--red);}
+.sr.inf{color:var(--text3);}
+/* RIGHT */
+.right-col{display:flex;flex-direction:column;gap:0.9rem;}
+.ctrl{display:flex;flex-direction:column;gap:0.5rem;}
+.btn{width:100%;padding:0.6rem;border:1px solid var(--border);border-radius:6px;
+background:transparent;color:var(--text);font-family:var(--mono);font-size:0.62rem;
+letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+.btn:hover{background:rgba(123,47,255,0.1);border-color:var(--purple);color:var(--lav);}
+.btn.pr{background:linear-gradient(135deg,var(--purple),var(--violet));border-color:transparent;color:#fff;box-shadow:0 0 15px rgba(123,47,255,0.3);}
+.btn.pr:hover{box-shadow:0 0 25px rgba(123,47,255,0.5);transform:translateY(-1px);}
+.btn.st{background:linear-gradient(135deg,#6b0000,var(--red));box-shadow:0 0 15px rgba(255,77,109,0.25);}
+.btn.gn{border-color:rgba(0,229,160,0.3);color:var(--green);}
+.btn.gn:hover{background:rgba(0,229,160,0.08);}
+.ai{margin-top:0.7rem;padding:0.65rem;background:var(--panel2);border-radius:6px;border:1px solid rgba(0,229,160,0.12);}
+.ai-t{font-family:var(--mono);font-size:0.54rem;color:var(--text3);margin-bottom:0.35rem;}
+.ai-b{font-family:var(--mono);font-size:0.53rem;color:var(--text2);line-height:1.85;}
+.ai-b b{color:var(--green);}
+.accrow{margin-bottom:0.55rem;}
+.acc-lh{display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.58rem;color:var(--text2);margin-bottom:0.2rem;}
+.acc-pct{color:var(--lav);font-weight:600;}
+.acc-t{height:3px;background:rgba(123,47,255,0.1);border-radius:2px;}
+.acc-b{height:3px;border-radius:2px;transition:width 1.2s ease;}
+.frow{margin-bottom:0.48rem;}
+.flh{display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.57rem;color:var(--text2);margin-bottom:0.18rem;}
+.fpct{color:var(--text3);}
+.ft{height:2px;background:rgba(123,47,255,0.1);border-radius:1px;}
+.fb{height:2px;border-radius:1px;transition:width 1s ease;}
+.sgrd{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.7rem;}
+.ss{background:var(--panel2);border:1px solid rgba(123,47,255,0.1);border-radius:7px;padding:0.6rem;text-align:center;}
+.sv2{font-family:var(--mono);font-size:1rem;font-weight:600;color:var(--lav);}
+.sl2{font-family:var(--mono);font-size:0.48rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-top:0.12rem;}
+.prow{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:0.57rem;margin-bottom:0.3rem;}
+.pn{color:var(--text2);}
+.pc{background:rgba(123,47,255,0.1);border-radius:3px;padding:0.1rem 0.4rem;color:var(--lav);font-size:0.54rem;}
+.log-e{display:flex;flex-direction:column;gap:0.28rem;max-height:130px;overflow-y:auto;}
+.log-e::-webkit-scrollbar{width:2px;}
+.log-e::-webkit-scrollbar-thumb{background:var(--purple);}
+.le{font-family:var(--mono);font-size:0.54rem;color:var(--text3);padding:0.22rem 0.4rem;border-left:2px solid transparent;line-height:1.5;}
+.le.w{border-color:var(--green);color:var(--text2);}
+.le.s{border-color:var(--amber);color:var(--amber);}
+.le.v{border-color:var(--blue);color:var(--blue);}
+.le.i{border-color:var(--purple);}
+.le.er{border-color:var(--red);color:var(--red);}
+@media(max-width:900px){.app{grid-template-columns:1fr;}.sgrid{grid-template-columns:repeat(3,1fr);}.hero-grid{grid-template-columns:1fr auto auto;}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-brand">AdaptSleeve · Live Demo</div>
+  <div class="badges">
+    <div class="badge"><div class="bdot sim" id="connDot"></div><span id="connTxt">SIM MODE</span></div>
+    <div class="badge"><div class="bdot ml"></div><span>RF MODEL LIVE</span></div>
+    <div class="badge"><div class="bdot off" id="ardDot"></div><span id="ardTxt">ARDUINO READY</span></div>
+  </div>
+</nav>
+
+<div class="app">
+  <!-- MODE BAR -->
+  <div class="mode-bar">
+    <span class="mlbl">Source:</span>
+    <button class="mbtn on" id="bSim" onclick="setMode('sim')">⚡ Simulation</button>
+    <button class="mbtn" id="bArd" onclick="setMode('ard')">🔌 Arduino Live</button>
+    <div class="msep"></div>
+    <!-- Arduino controls -->
+    <div class="ard-ctrl hidden" id="ardCtrl">
+      <span style="font-family:var(--mono);font-size:0.58rem;color:var(--text3);">Port:</span>
+      <input class="tinput" id="portIn" value="COM3" placeholder="COM3">
+      <span style="font-family:var(--mono);font-size:0.58rem;color:var(--text3);">Baud:</span>
+      <input class="tinput" id="baudIn" value="9600" style="width:55px;">
+      <button class="cbtn" onclick="connectArduino()" id="connBtn">Connect</button>
+      <span style="font-family:var(--mono);font-size:0.54rem;" id="ardStat" style="color:var(--text3);">Not connected · Needs Chrome/Edge</span>
+    </div>
+    <!-- Sim controls -->
+    <div class="sim-ctrl" id="simCtrl">
+      <select class="psel" id="profSel">
+        <option value="healthy_adult">Healthy Adult</option>
+        <option value="child">Child</option>
+        <option value="elderly">Elderly</option>
+        <option value="motor_impaired">Motor Impaired</option>
+      </select>
+      <select class="psel" id="modSel">
+        <option value="w">▶ Writing</option>
+        <option value="n">◼ Not Writing</option>
+        <option value="t">⟳ Transition</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- LEFT -->
+  <div class="left-col">
+    <!-- PIPELINE -->
+    <div class="panel" style="padding:0.9rem 1.3rem;">
+      <div class="ptag">// Processing Pipeline · 60ms loop</div>
+      <div class="pipeline">
+        <div class="pbox" id="p0">SENSOR<br>READ</div><div class="parr">▶</div>
+        <div class="pbox" id="p1">SERIAL<br>TX</div><div class="parr">▶</div>
+        <div class="pbox" id="p2">SCALE<br>MM</div><div class="parr">▶</div>
+        <div class="pbox" id="p3">RF<br>INFER</div><div class="parr">▶</div>
+        <div class="pbox" id="p4">IMB<br>CALC</div><div class="parr">▶</div>
+        <div class="pbox" id="p5">SERVO<br>CMD</div><div class="parr">▶</div>
+        <div class="pbox" id="p6">VIB<br>CTRL</div>
+      </div>
+    </div>
+
+    <!-- PREDICTION HERO -->
+    <div class="panel">
+      <div class="ptag">// ML Classifier Output</div>
+      <div class="hero-grid">
+        <div>
+          <div class="pred-lbl">Prediction</div>
+          <div class="pred-res nw" id="predRes">STANDBY</div>
+          <div class="pred-conf">Confidence: <b id="predConf">—</b> &nbsp;·&nbsp; RF · 50 est.</div>
+          <div style="margin-top:0.85rem;">
+            <div class="imb-hdr"><span class="imb-lbl">Force Imbalance</span><span class="imb-v" id="imbV">0 / 1500</span></div>
+            <div class="imb-t"><div class="imb-f" id="imbF" style="width:0%"></div></div>
+            <div class="imb-note" id="imbN">Threshold: <b>300</b> — Servos idle</div>
+          </div>
+        </div>
+        <!-- S1 -->
+        <div class="srv">
+          <div class="rw">
+            <svg width="68" height="68" viewBox="0 0 68 68">
+              <circle class="rbg" cx="34" cy="34" r="31" fill="none" stroke-width="4.5"/>
+              <circle class="rf" id="r1" cx="34" cy="34" r="31" fill="none" stroke-width="4.5" stroke="var(--purple)"/>
+            </svg>
+            <div class="rctr" id="s1a">90°</div>
+          </div>
+          <div class="slbl">Servo S1</div>
+          <div style="font-family:var(--mono);font-size:0.5rem;color:var(--text3);">Index/Middle</div>
+        </div>
+        <!-- S2 -->
+        <div class="srv">
+          <div class="rw">
+            <svg width="68" height="68" viewBox="0 0 68 68">
+              <circle class="rbg" cx="34" cy="34" r="31" fill="none" stroke-width="4.5"/>
+              <circle class="rf" id="r2" cx="34" cy="34" r="31" fill="none" stroke-width="4.5" stroke="var(--violet)"/>
+            </svg>
+            <div class="rctr" id="s2a">90°</div>
+          </div>
+          <div class="slbl">Servo S2</div>
+          <div style="font-family:var(--mono);font-size:0.5rem;color:var(--text3);">Thumb</div>
+        </div>
+        <!-- VIBRATION -->
+        <div class="vib">
+          <div class="vib-circle" id="vibC">〰</div>
+          <div class="slbl">Vib. Motor</div>
+          <div class="vfreq" id="vibF">— Hz</div>
+          <div style="font-family:var(--mono);font-size:0.48rem;color:var(--text3);text-align:center;margin-top:0.1rem;">Anti-tremor<br>Blue/Red wire</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SENSORS -->
+    <div class="panel">
+      <div class="ptag">// Sensor Readings</div>
+      <div class="ptitle">Real-Time ADC Output</div>
+      <div class="sgrid">
+        <div class="sc" id="sc0"><div class="sn">Flex 1<br>Index·A0</div><div class="sv" id="v0">—</div><div class="su">ADC</div><div class="sbt"><div class="sb" id="b0" style="width:0%"></div></div></div>
+        <div class="sc" id="sc1"><div class="sn">Flex 2<br>Middle·A1</div><div class="sv" id="v1">—</div><div class="su">ADC</div><div class="sbt"><div class="sb" id="b1" style="width:0%"></div></div></div>
+        <div class="sc" id="sc2"><div class="sn">Flex 3<br>Thumb·A2</div><div class="sv" id="v2">—</div><div class="su">ADC</div><div class="sbt"><div class="sb" id="b2" style="width:0%"></div></div></div>
+        <div class="sc" id="sc3"><div class="sn">FSR Grip<br>Pen·A3</div><div class="sv" id="v3">—</div><div class="su">ADC·thr 400</div><div class="sbt"><div class="sb" id="b3" style="width:0%"></div></div></div>
+        <div class="sc" id="sc4"><div class="sn">IMU Z<br>MPU6050</div><div class="sv" id="v4">—</div><div class="su">g-force</div><div class="sbt"><div class="sb" id="b4" style="width:0%"></div></div></div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="panel">
+      <div class="chart-hdr">
+        <div><div class="ptag">// Time Series</div><div class="ptitle" style="margin-bottom:0">Sensor History (60 readings)</div></div>
+        <div class="leg">
+          <div class="li"><div class="ld" style="background:var(--violet)"></div>Flex2</div>
+          <div class="li"><div class="ld" style="background:var(--green)"></div>FSR</div>
+          <div class="li"><div class="ld" style="background:var(--amber)"></div>IMU×1k</div>
+          <div class="li"><div class="ld" style="background:var(--pink)"></div>Imb÷15</div>
+        </div>
+      </div>
+      <canvas id="chart"></canvas>
+    </div>
+
+    <!-- SERIAL MONITOR -->
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.55rem;">
+        <div><div class="ptag">// Serial Monitor</div><div class="ptitle" style="margin-bottom:0">Arduino ↔ PC Stream</div></div>
+        <div style="font-family:var(--mono);font-size:0.54rem;color:var(--text3);text-align:right;line-height:1.9;"><span id="rxC">RX: 0</span><br><span id="txC">TX: 0</span></div>
+      </div>
+      <div class="slog" id="slog">
+        <div class="sr inf"># AdaptSleeve Serial Monitor initialized</div>
+        <div class="sr inf"># Format RX: flex1,flex2,flex3,fsr,imu_z</div>
+        <div class="sr inf"># Format TX: S:ang1,ang2  V:freq</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-col">
+    <!-- CONTROLS -->
+    <div class="panel">
+      <div class="ptag">// Demo Control</div>
+      <div class="ptitle">Simulation Panel</div>
+      <div class="ctrl">
+        <button class="btn pr" id="startBtn" onclick="toggleSim()">▶ Start Demo</button>
+        <button class="btn gn" onclick="spike()">⚡ Force Spike / Tremor</button>
+        <button class="btn" onclick="penHold()">✋ Pen-Hold Idle (3s)</button>
+      </div>
+      <div class="ai">
+        <div class="ai-t">// Arduino Live Mode</div>
+        <div class="ai-b">
+          1. Upload <b>5_arduino_sketch.ino</b> (MODE 1)<br>
+          2. Click <b>Arduino Live</b> above<br>
+          3. Enter COM port → <b>Connect</b><br>
+          4. Requires <b>Chrome or Edge</b> browser<br>
+          5. Dashboard auto-switches to live data
+        </div>
+      </div>
+    </div>
+
+    <!-- ML PERFORMANCE -->
+    <div class="panel">
+      <div class="ptag">// ML Performance</div>
+      <div class="ptitle">Classifier Accuracy</div>
+      <div class="accrow"><div class="acc-lh"><span>Random Forest ✓</span><span class="acc-pct">97.1%</span></div>
+        <div class="acc-t"><div class="acc-b" data-w="97.1" style="width:0%;background:linear-gradient(90deg,var(--green),#00cfb4)"></div></div></div>
+      <div class="accrow"><div class="acc-lh"><span>SVM (RBF kernel)</span><span class="acc-pct">95.1%</span></div>
+        <div class="acc-t"><div class="acc-b" data-w="95.1" style="width:0%;background:linear-gradient(90deg,var(--purple),var(--violet))"></div></div></div>
+      <div class="accrow"><div class="acc-lh"><span>KNN (k=5)</span><span class="acc-pct">95.2%</span></div>
+        <div class="acc-t"><div class="acc-b" data-w="95.2" style="width:0%;background:linear-gradient(90deg,var(--pink),var(--lav))"></div></div></div>
+      <div style="font-family:var(--mono);font-size:0.51rem;color:var(--text3);line-height:1.7;margin-top:0.35rem;">Subject-holdout · 100 subjects · 20 unseen test<br>42,000 samples · Min-max norm · 5 features</div>
+    </div>
+
+    <!-- FEATURE IMPORTANCE -->
+    <div class="panel">
+      <div class="ptag">// Feature Analysis</div>
+      <div class="ptitle">RF Feature Importances</div>
+      <div class="frow"><div class="flh"><span>IMU Z-Accel</span><span class="fpct">42.7%</span></div>
+        <div class="ft"><div class="fb" data-w="42.7" style="width:0%;background:linear-gradient(90deg,var(--green),#00cfb4)"></div></div></div>
+      <div class="frow"><div class="flh"><span>Flex3 Thumb</span><span class="fpct">29.2%</span></div>
+        <div class="ft"><div class="fb" data-w="29.2" style="width:0%;background:linear-gradient(90deg,var(--purple),var(--violet))"></div></div></div>
+      <div class="frow"><div class="flh"><span>Flex2 Middle</span><span class="fpct">19.6%</span></div>
+        <div class="ft"><div class="fb" data-w="19.6" style="width:0%;background:linear-gradient(90deg,var(--violet),var(--pink))"></div></div></div>
+      <div class="frow"><div class="flh"><span>Flex1 Index</span><span class="fpct">5.1%</span></div>
+        <div class="ft"><div class="fb" data-w="5.1" style="width:0%;background:var(--lav)"></div></div></div>
+      <div class="frow"><div class="flh"><span>FSR Grip</span><span class="fpct">3.5%</span></div>
+        <div class="ft"><div class="fb" data-w="3.5" style="width:0%;background:var(--amber)"></div></div></div>
+    </div>
+
+    <!-- DATASET -->
+    <div class="panel">
+      <div class="ptag">// Dataset</div>
+      <div class="ptitle">Training Data</div>
+      <div class="sgrd">
+        <div class="ss"><div class="sv2">100</div><div class="sl2">Subjects</div></div>
+        <div class="ss"><div class="sv2">42K</div><div class="sl2">Samples</div></div>
+        <div class="ss"><div class="sv2">20</div><div class="sl2">Sessions/subj</div></div>
+        <div class="ss"><div class="sv2">4</div><div class="sl2">Profiles</div></div>
+      </div>
+      <div class="prow"><span class="pn">Healthy Adults</span><span class="pc">78 subjects</span></div>
+      <div class="prow"><span class="pn">Children</span><span class="pc">6 subjects</span></div>
+      <div class="prow"><span class="pn">Elderly</span><span class="pc">14 subjects</span></div>
+      <div class="prow"><span class="pn">Motor Impaired</span><span class="pc">2 subjects</span></div>
+    </div>
+
+    <!-- LOG -->
+    <div class="panel" style="flex:1;">
+      <div class="ptag">// Event Log</div>
+      <div class="ptitle" style="margin-bottom:0.5rem;">System Stream</div>
+      <div class="log-e" id="logEl">
+        <div class="le i"><span style="color:var(--text3)">[SYS]</span> AdaptSleeve demo initialized</div>
+        <div class="le i"><span style="color:var(--text3)">[ML]</span> RF model loaded · 50 estimators · 97.1% acc</div>
+        <div class="le i"><span style="color:var(--text3)">[DATA]</span> 42K samples · 100 subjects · 4 profiles</div>
+        <div class="le v"><span style="color:var(--text3)">[VIB]</span> Vibration motor: anti-tremor via Nyquist principle</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROFILES={
+  healthy_adult:{f1:700,f2:1430,f3:762,ns:22,fw:700,iw:0.33,in_:0.07},
+  child:{f1:685,f2:1415,f3:748,ns:32,fw:555,iw:0.35,in_:0.07},
+  elderly:{f1:712,f2:1440,f3:770,ns:38,fw:475,iw:0.30,in_:0.06},
+  motor_impaired:{f1:692,f2:1420,f3:755,ns:55,fw:415,iw:0.28,in_:0.06}
+};
+function classify(f1,f2,f3,fsr,imu){
+  const sf1=(f1-300)/510,sf2=(f2-350)/1160,sf3=(f3-295)/565,sfsr=fsr/920,simu=imu/0.62;
+  const sc=0.427*Math.min(1,simu/0.35)+0.292*Math.min(1,Math.max(0,(sf3-0.65)/0.20))
+    +0.196*Math.min(1,Math.max(0,(sf2-0.85)/0.08))+0.051*Math.min(1,Math.max(0,(sf1-0.56)/0.16))
+    +0.035*Math.min(1,Math.max(0,(sfsr-0.35)/0.20));
+  const p=Math.max(0.01,Math.min(0.99,sc+(Math.random()-0.5)*0.07));
+  return{pred:p>0.5?1:0,conf:p};
+}
+function imb(f1,f2,f3){return Math.min(1500,Math.max(0,Math.abs(f1-f2)+Math.abs(f2-f3)+Math.abs(f1-f3)));}
+function servos(im){const a=Math.max(0,Math.min(10,Math.round((im-300)/120)));return{s1:90+a,s2:90-a};}
+
+let running=false,iv=null,step=0,anomaly_=false,penHoldActive=false,curMode='sim';
+let rxN=0,txN=0;
+const cd={f2:[],fsr:[],imu:[],imb:[]};const MX=60;
+
+const canvas=document.getElementById('chart'),ctx=canvas.getContext('2d');
+function rz(){const r=canvas.parentElement.getBoundingClientRect();canvas.width=r.width-40;canvas.height=165;}
+rz();window.addEventListener('resize',rz);
+function drawChart(){
+  const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(123,47,255,0.07)';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){ctx.beginPath();ctx.moveTo(0,H/4*i);ctx.lineTo(W,H/4*i);ctx.stroke();}
+  [{d:cd.f2,c:'#9b4dff',lo:1300,hi:1510},{d:cd.fsr,c:'#00e5a0',lo:0,hi:920},
+   {d:cd.imu,c:'#ffb830',lo:0,hi:0.62,s:1000},{d:cd.imb,c:'#e040ff',lo:0,hi:1500}
+  ].forEach(({d,c,lo,hi,s=1})=>{
+    if(d.length<2)return;
+    ctx.beginPath();ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.shadowBlur=5;ctx.shadowColor=c;
+    d.forEach((v,i)=>{
+      const vv=v*s;const nr=Math.min(1,Math.max(0,(vv-lo*s)/((hi-lo)*s)));
+      const x=(i/(MX-1))*W,y=H-nr*(H*0.82)-H*0.05;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.stroke();ctx.shadowBlur=0;
+  });
+}
+function n(s){return(Math.random()-0.5)*2*s;}
+function simRead(){
+  const p=PROFILES[document.getElementById('profSel').value];
+  const m=penHoldActive?'ph':document.getElementById('modSel').value;
+  const isT=m==='t';const isW=isT?(Math.floor(step/10)%2===0):(m==='w');
+  let f1,f2,f3,fsr,imu;
+  if(m==='ph'){
+    f1=Math.min(810,Math.max(635,p.f1+n(p.ns*0.9)));
+    f2=Math.min(1510,Math.max(1320,p.f2+n(p.ns*1.0)));
+    f3=Math.min(860,Math.max(685,p.f3+n(p.ns*0.9)));
+    fsr=Math.min(810,Math.max(330,p.fw*0.85+n(85)));
+    imu=Math.min(0.10,Math.max(0,p.in_+n(0.04)));
+  } else if(isW){
+    f1=Math.min(810,Math.max(635,p.f1+n(p.ns)));f2=Math.min(1510,Math.max(1320,p.f2+n(p.ns*1.1)));
+    f3=Math.min(860,Math.max(685,p.f3+n(p.ns)));fsr=Math.min(920,Math.max(280,p.fw+n(90)));
+    imu=Math.min(0.60,Math.max(0.06,p.iw+n(0.10)));
+  } else {
+    f1=Math.min(700,Math.max(300,p.f1-170+n(p.ns*1.1)));f2=Math.min(860,Math.max(350,p.f2-720+n(p.ns*1.2)));
+    f3=Math.min(660,Math.max(295,p.f3-200+n(p.ns*1.1)));fsr=Math.min(399,Math.max(0,160+n(65)));
+    imu=Math.min(0.13,Math.max(0,p.in_+n(0.04)));
+  }
+  if(anomaly_){fsr=Math.min(920,fsr+220);f1=Math.min(810,f1+50);f2=Math.min(1510,f2+70);imu=Math.min(0.60,imu+0.18);anomaly_=false;}
+  return[f1,f2,f3,fsr,imu];
+}
+function process(f1,f2,f3,fsr,imu){
+  const{pred,conf}=classify(f1,f2,f3,fsr,imu);
+  const im=imb(f1,f2,f3);const son=pred===1&&im>300;
+  const{s1,s2}=son?servos(im):{s1:90,s2:90};
+  const treHz=imu>0.30?Math.round(imu*50):0;const von=imu>0.30&&pred===1;
+  // Prediction
+  const pr=document.getElementById('predRes');
+  if(pred===1){pr.textContent='WRITING';pr.className='pred-res w';}
+  else{pr.textContent='NOT WRITING';pr.className='pred-res nw';}
+  document.getElementById('predConf').textContent=(conf*100).toFixed(1)+'%';
+  const ip=(im/1500)*100;
+  document.getElementById('imbV').textContent=Math.round(im)+' / 1500';
+  document.getElementById('imbF').style.width=ip+'%';
+  document.getElementById('imbF').className='imb-f'+(im>300?' hi':'');
+  document.getElementById('imbN').innerHTML=son
+    ?'Threshold: <b>300</b> — <span style="color:var(--amber)">Servos ACTIVE</span>'
+    :'Threshold: <b>300</b> — Servos idle';
+  // Rings
+  setRing('r1',s1,'#00e5a0',son);setRing('r2',s2,'#9b4dff',son);
+  document.getElementById('s1a').textContent=s1+'°';document.getElementById('s2a').textContent=s2+'°';
+  // Vib
+  const vc=document.getElementById('vibC');
+  vc.className='vib-circle'+(von?' on':'');
+  document.getElementById('vibF').textContent=von?treHz+' Hz':'— Hz';
+  // Sensors
+  const vals=[{v:Math.round(f1),mx:1023,a:f1>640},{v:Math.round(f2),mx:1023,a:f2>1300},
+    {v:Math.round(f3),mx:1023,a:f3>685},{v:Math.round(fsr),mx:1023,a:fsr>400},
+    {v:imu.toFixed(3),pct:(imu/0.62)*100,a:imu>0.15}];
+  vals.forEach(({v,mx,pct,a},i)=>{
+    const el=document.getElementById('v'+i);if(el){el.textContent=v;el.className='sv'+(a?' hi':'');}
+    document.getElementById('sc'+i).className='sc'+(a?' on':'');
+    document.getElementById('b'+i).style.width=Math.min(100,pct!==undefined?pct:(parseFloat(v)/mx*100))+'%';
+  });
+  // Chart
+  cd.f2.push(f2);cd.fsr.push(fsr);cd.imu.push(imu);cd.imb.push(im);
+  if(cd.f2.length>MX){cd.f2.shift();cd.fsr.shift();cd.imu.shift();cd.imb.shift();}
+  drawChart();
+  // Pipeline
+  const active=[0,1,2,3,4];if(son)active.push(5);if(von)active.push(6);
+  [0,1,2,3,4,5,6].forEach(i=>document.getElementById('p'+i).className='pbox');
+  active.forEach(i=>document.getElementById('p'+i).className='pbox on');
+  // Serial + log
+  if(step%8===0){
+    addSer(`${f1.toFixed(0)},${f2.toFixed(0)},${f3.toFixed(0)},${fsr.toFixed(0)},${imu.toFixed(3)}`,'rx');
+    if(son)addSer(`S:${s1},${s2}`,'tx');if(von)addSer(`V:${treHz}`,'tx');
+  }
+  if(step%20===0){
+    if(son)addLog(`Servo active S1:${s1}° S2:${s2}° imb:${Math.round(im)}`,'s');
+    else if(pred===1)addLog(`Writing detected · conf:${(conf*100).toFixed(0)}%`,'w');
+    if(von)addLog(`Vibration ${treHz}Hz — anti-tremor active`,'v');
+  }
+  step++;
+}
+function setRing(id,angle,col,active){
+  const el=document.getElementById(id);const c=2*Math.PI*31;
+  const prog=(angle-80)/20;el.style.strokeDashoffset=c*(1-Math.max(0,Math.min(1,prog)));
+  el.style.stroke=active?'#00e5a0':col;
+}
+function addLog(msg,t='i'){
+  const el=document.getElementById('logEl');const ts=new Date().toLocaleTimeString('en-IN',{hour12:false});
+  const d=document.createElement('div');d.className=`le ${t}`;
+  d.innerHTML=`<span style="color:var(--text3)">[${ts}]</span> ${msg}`;
+  el.appendChild(d);if(el.children.length>50)el.removeChild(el.firstChild);
+  el.parentElement.scrollTop=el.parentElement.scrollHeight;
+}
+function addSer(msg,dir){
+  const el=document.getElementById('slog');const d=document.createElement('div');
+  d.className='sr'+(dir==='tx'?' tx':dir==='er'?' er':' inf');
+  d.textContent=(dir==='rx'?'← RX ':'→ TX ')+msg;
+  el.appendChild(d);if(el.children.length>30)el.removeChild(el.firstChild);el.scrollTop=el.scrollHeight;
+  if(dir==='rx'){rxN++;document.getElementById('rxC').textContent='RX: '+rxN;}
+  else{txN++;document.getElementById('txC').textContent='TX: '+txN;}
+}
+function toggleSim(){
+  const btn=document.getElementById('startBtn');
+  if(!running){running=true;iv=setInterval(()=>{const[f1,f2,f3,fsr,imu]=simRead();process(f1,f2,f3,fsr,imu);},200);
+    btn.textContent='⏹ Stop Demo';btn.className='btn st';addLog('Simulation started · 5Hz','i');}
+  else{running=false;clearInterval(iv);btn.textContent='▶ Start Demo';btn.className='btn pr';addLog('Stopped','i');}
+}
+function spike(){anomaly_=true;addLog('⚡ Force spike injected','s');}
+function penHold(){penHoldActive=true;setTimeout(()=>{penHoldActive=false;},3000);addLog('Pen-hold idle simulated (3s)','i');}
+function setMode(m){
+  curMode=m;
+  document.getElementById('bSim').className='mbtn'+(m==='sim'?' on':'');
+  document.getElementById('bArd').className='mbtn'+(m==='ard'?' on':'');
+  document.getElementById('simCtrl').className='sim-ctrl'+(m==='ard'?' hidden':'');
+  document.getElementById('ardCtrl').className='ard-ctrl'+(m==='sim'?' hidden':'');
+  const dot=document.getElementById('connDot');const txt=document.getElementById('connTxt');
+  if(m==='sim'){dot.className='bdot sim';txt.textContent='SIM MODE';}
+  else{dot.className='bdot off';txt.textContent='ARD STANDBY';}
+  addLog(`Mode: ${m==='sim'?'Simulation':'Arduino Live'}`,'i');
+}
+// WebSerial
+let serialPort=null;
+async function connectArduino(){
+  if(!('serial' in navigator)){
+    addLog('WebSerial not available — use Chrome or Edge','er');
+    addSer('ERROR: Use Chrome or Edge for WebSerial','er');
+    return;
+  }
+  try{
+    serialPort=await navigator.serial.requestPort();
+    const baud=parseInt(document.getElementById('baudIn').value)||9600;
+    await serialPort.open({baudRate:baud});
+    document.getElementById('ardStat').textContent='Connected!';
+    document.getElementById('ardStat').style.color='var(--green)';
+    document.getElementById('ardDot').className='bdot live';
+    document.getElementById('ardTxt').textContent='ARDUINO LIVE';
+    document.getElementById('connDot').className='bdot live';
+    document.getElementById('connTxt').textContent='LIVE DATA';
+    addLog('✓ Arduino connected via WebSerial','w');
+    addSer('CONNECTED · awaiting data...','inf');
+    if(running){running=false;clearInterval(iv);document.getElementById('startBtn').textContent='▶ Start Demo';document.getElementById('startBtn').className='btn pr';}
+    readLoop();
+  }catch(e){
+    addLog('Connection failed: '+e.message,'er');
+    addSer('ERR: '+e.message,'er');
+    document.getElementById('ardStat').textContent='Failed — check port';
+    document.getElementById('ardStat').style.color='var(--red)';
+  }
+}
+async function readLoop(){
+  const tds=new TextDecoderStream();
+  serialPort.readable.pipeTo(tds.writable);
+  const reader=tds.readable.getReader();let buf='';
+  try{
+    while(true){
+      const{value,done}=await reader.read();if(done)break;
+      buf+=value;const lines=buf.split('\n');buf=lines.pop();
+      for(const line of lines){
+        const l=line.trim();
+        if(!l||l.startsWith('#')){addSer(l,'inf');continue;}
+        const pts=l.split(',');
+        if(pts.length===5){
+          const[f1,f2,f3,fsr,imu]=pts.map(Number);
+          if(!isNaN(f1+f2+f3+fsr+imu)){
+            addSer(l,'rx');process(f1,f2,f3,fsr,imu);
+            const{pred,conf}=classify(f1,f2,f3,fsr,imu);
+            const im=imb(f1,f2,f3);const son=pred===1&&im>300;
+            const{s1,s2}=son?servos(im):{s1:90,s2:90};
+            await sendC(`S:${s1},${s2}\n`);
+            const treHz=imu>0.30?Math.round(imu*50):0;
+            await sendC(`V:${pred===1&&imu>0.30?treHz:0}\n`);
+          }
+        }
+      }
+    }
+  }catch(e){addLog('Serial error: '+e.message,'er');}
+}
+async function sendC(cmd){
+  if(!serialPort||!serialPort.writable)return;
+  try{const w=serialPort.writable.getWriter();await w.write(new TextEncoder().encode(cmd));w.releaseLock();addSer(cmd.trim(),'tx');}catch(e){}
+}
+window.addEventListener('load',()=>{
+  setTimeout(()=>{document.querySelectorAll('[data-w]').forEach(el=>{el.style.width=el.dataset.w+'%';});},400);
+});
+document.getElementById('profSel').addEventListener('change',()=>addLog('Profile: '+document.getElementById('profSel').value,'i'));
+document.getElementById('modSel').addEventListener('change',()=>addLog('Mode: '+document.getElementById('modSel').value,'i'));
+</script>
+</body>
+</html>
